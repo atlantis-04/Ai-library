@@ -425,12 +425,15 @@ elif menu == "🤖 AI Insights":
                 except Exception:
                     continue
             
-            pred_df = pd.DataFrame(predictions)
-            pred_df = pred_df.merge(members_df[['id', 'name']], 
-                                   left_on='Member ID', right_on='id', how='left')
-            
-            st.dataframe(pred_df[['name', 'Late Risk', 'Risk Level']], 
-                        use_container_width=True, hide_index=True)
+            if predictions:
+                pred_df = pd.DataFrame(predictions)
+                pred_df = pred_df.merge(members_df[['id', 'name']], 
+                                       left_on='Member ID', right_on='id', how='left')
+                
+                st.dataframe(pred_df[['name', 'Late Risk', 'Risk Level']], 
+                            use_container_width=True, hide_index=True)
+            else:
+                st.info("Unable to generate predictions at this time.")
     else:
         st.info("Not enough data for AI insights. Add more transactions.")
 
