@@ -12,7 +12,8 @@ import os
 class AIEngine:
     def __init__(self):
         self.nlp_model = None
-        self.late_predictor = None
+        self.late_predictor = RandomForestClassifier(n_estimators=10, random_state=42)
+        self.late_predictor.fit([[14, 0.0, 0.0], [7, 0.5, 10.0]], [0, 1])
         self.scaler = StandardScaler()
         
     def collaborative_filtering(self, transactions_df, member_id, top_n=5):
