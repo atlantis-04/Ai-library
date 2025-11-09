@@ -96,11 +96,21 @@ class AIEngine:
     
     def train_late_predictor(self, transactions_df):
         """Train model to predict late returns"""
-        if transactions_df.empty or len(transactions_df) < 10:
+        if transactions_df.empty:
+            # Create a dummy model with minimal data
+            X = np.array([[14, 0.0, 0.0], [7, 0.5, 10.0]])
+            y = np.array([0, 1])
+            self.late_predictor = RandomForestClassifier(n_estimators=10, random_state=42)
+            self.late_predictor.fit(X, y)
             return
         
         completed = transactions_df[transactions_df['return_date'].notna()].copy()
-        if completed.empty:
+        if completed.empty or len(completed) < 2:
+            # Create a dummy model with minimal data
+            X = np.array([[14, 0.0, 0.0], [7, 0.5, 10.0]])
+            y = np.array([0, 1])
+            self.late_predictor = RandomForestClassifier(n_estimators=10, random_state=42)
+            self.late_predictor.fit(X, y)
             return
         
         completed['is_late'] = (completed['return_date'] > completed['due_date']).astype(int)
@@ -118,6 +128,12 @@ class AIEngine:
         X = completed[features].fillna(0)
         y = completed['is_late']
         
+        # Ensure we have at least 2 samples and both classes
+        if len(X) < 2 or len(np.unique(y)) < 2:
+            # Add dummy samples to ensure model can be trained
+            X = np.vstack([X.values, [[14, 0.0, 0.0], [7, 0.5, 10.0]]])
+            y = np.concatenate([y.values, [0, 1]])
+        
         self.late_predictor = RandomForestClassifier(n_estimators=50, random_state=42)
         self.late_predictor.fit(X, y)
     
@@ -126,20 +142,28 @@ class AIEngine:
         if self.late_predictor is None:
             return 0.5
         
-        member_trans = transactions_df[
-            (transactions_df['member_id'] == member_id) & 
-            (transactions_df['return_date'].notna())
-        ]
-        
-        if member_trans.empty:
-            late_rate = 0.0
-            total_fines = 0.0
-        else:
-            late_rate = ((member_trans['return_date'] > member_trans['due_date']).sum() / len(member_trans))
-            total_fines = member_trans['fine'].sum()
-        
-        features = np.array([[borrow_duration, late_rate, total_fines]])
-        return self.late_predictor.predict_proba(features)[0][1]
+        try:
+            member_trans = transactions_df[
+                (transactions_df['member_id'] == member_id) & 
+                (transactions_df['return_date'].notna())
+            ]
+            
+            if member_trans.empty:
+                late_rate = 0.0
+                total_fines = 0.0
+            else:
+                late_rate = ((member_trans['return_date'] > member_trans['due_date']).sum() / len(member_trans))
+                total_fines = member_trans['fine'].sum()
+            
+            features = np.array([[borrow_duration, late_rate, total_fines]])
+            proba = self.late_predictor.predict_proba(features)
+            
+            # Check array shape and return appropriate value
+            if len(proba) > 0 and len(proba[0]) > 1:
+                return float(proba[0][1])
+            return 0.5
+        except Exception:
+            return 0.5
     
     def nlp_search(self, query, books_df):
         """Search books using TF-IDF (lightweight NLP)"""
