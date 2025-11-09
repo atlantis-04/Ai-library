@@ -139,10 +139,10 @@ class AIEngine:
     
     def predict_late_return(self, member_id, borrow_duration, transactions_df):
         """Predict if a member will return late"""
-        if self.late_predictor is None:
-            return 0.5
-        
         try:
+            if not hasattr(self, 'late_predictor') or self.late_predictor is None:
+                return 0.5
+            
             member_trans = transactions_df[
                 (transactions_df['member_id'] == member_id) & 
                 (transactions_df['return_date'].notna())
@@ -158,7 +158,6 @@ class AIEngine:
             features = np.array([[borrow_duration, late_rate, total_fines]])
             proba = self.late_predictor.predict_proba(features)
             
-            # Check array shape and return appropriate value
             if len(proba) > 0 and len(proba[0]) > 1:
                 return float(proba[0][1])
             return 0.5
