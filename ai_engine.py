@@ -140,30 +140,21 @@ class AIEngine:
     
     def predict_late_return(self, member_id, borrow_duration, transactions_df):
         """Predict if a member will return late"""
-        try:
-            if not hasattr(self, 'late_predictor') or self.late_predictor is None:
-                return 0.5
-            
-            member_trans = transactions_df[
-                (transactions_df['member_id'] == member_id) & 
-                (transactions_df['return_date'].notna())
-            ]
-            
-            if member_trans.empty:
-                late_rate = 0.0
-                total_fines = 0.0
-            else:
-                late_rate = ((member_trans['return_date'] > member_trans['due_date']).sum() / len(member_trans))
-                total_fines = member_trans['fine'].sum()
-            
-            features = np.array([[borrow_duration, late_rate, total_fines]])
-            proba = self.late_predictor.predict_proba(features)
-            
-            if len(proba) > 0 and len(proba[0]) > 1:
-                return float(proba[0][1])
-            return 0.5
-        except Exception:
-            return 0.5
+        member_trans = transactions_df[
+            (transactions_df['member_id'] == member_id) & 
+            (transactions_df['return_date'].notna())
+        ]
+        
+        if member_trans.empty:
+            late_rate = 0.0
+            total_fines = 0.0
+        else:
+            late_rate = float((member_trans['return_date'] > member_trans['due_date']).sum() / len(member_trans))
+            total_fines = float(member_trans['fine'].sum())
+        
+        features = np.array([[float(borrow_duration), late_rate, total_fines]])
+        proba = self.late_predictor.predict_proba(features)
+        return float(proba[0][1])
     
     def nlp_search(self, query, books_df):
         """Search books using TF-IDF (lightweight NLP)"""
