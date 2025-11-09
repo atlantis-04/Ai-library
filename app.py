@@ -413,14 +413,17 @@ elif menu == "🤖 AI Insights":
         if not active_trans.empty:
             predictions = []
             for _, trans in active_trans.iterrows():
-                duration = (trans['due_date'] - trans['borrow_date']).days
-                risk = ai_engine.predict_late_return(trans['member_id'], duration, transactions_df)
-                predictions.append({
-                    'Transaction ID': trans['id'],
-                    'Member ID': trans['member_id'],
-                    'Late Risk': f"{risk*100:.1f}%",
-                    'Risk Level': 'High' if risk > 0.7 else 'Medium' if risk > 0.4 else 'Low'
-                })
+                try:
+                    duration = (pd.to_datetime(trans['due_date']) - pd.to_datetime(trans['borrow_date'])).days
+                    risk = ai_engine.predict_late_return(trans['member_id'], duration, transactions_df)
+                    predictions.append({
+                        'Transaction ID': trans['id'],
+                        'Member ID': trans['member_id'],
+                        'Late Risk': f"{risk*100:.1f}%",
+                        'Risk Level': 'High' if risk > 0.7 else 'Medium' if risk > 0.4 else 'Low'
+                    })
+                except Exception:
+                    continue
             
             pred_df = pd.DataFrame(predictions)
             pred_df = pred_df.merge(members_df[['id', 'name']], 
