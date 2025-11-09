@@ -413,17 +413,14 @@ elif menu == "🤖 AI Insights":
         if not active_trans.empty:
             predictions = []
             for _, trans in active_trans.iterrows():
-                try:
-                    duration = (pd.to_datetime(trans['due_date']) - pd.to_datetime(trans['borrow_date'])).days
-                    risk = ai_engine.predict_late_return(trans['member_id'], duration, transactions_df)
-                    predictions.append({
-                        'Transaction ID': trans['id'],
-                        'Member ID': trans['member_id'],
-                        'Late Risk': f"{risk*100:.1f}%",
-                        'Risk Level': 'High' if risk > 0.7 else 'Medium' if risk > 0.4 else 'Low'
-                    })
-                except Exception:
-                    continue
+                duration = (pd.to_datetime(trans['due_date']) - pd.to_datetime(trans['borrow_date'])).days
+                risk = ai_engine.predict_late_return(trans['member_id'], duration, transactions_df)
+                predictions.append({
+                    'Transaction ID': trans['id'],
+                    'Member ID': trans['member_id'],
+                    'Late Risk': f"{risk*100:.1f}%",
+                    'Risk Level': 'High' if risk > 0.7 else 'Medium' if risk > 0.4 else 'Low'
+                })
             
             if predictions:
                 pred_df = pd.DataFrame(predictions)
@@ -433,7 +430,7 @@ elif menu == "🤖 AI Insights":
                 st.dataframe(pred_df[['name', 'Late Risk', 'Risk Level']], 
                             use_container_width=True, hide_index=True)
             else:
-                st.info("Unable to generate predictions at this time.")
+                st.info("No active transactions to analyze.")
     else:
         st.info("Not enough data for AI insights. Add more transactions.")
 
