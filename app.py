@@ -163,7 +163,9 @@ st.markdown("""
 # Initialize
 @st.cache_resource
 def init_system():
-    return LibraryManager(), AIEngine()
+    manager = LibraryManager()
+    engine = AIEngine()
+    return manager, engine
 
 manager, ai_engine = init_system()
 
